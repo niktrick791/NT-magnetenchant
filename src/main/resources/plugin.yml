@@ -1,0 +1,23 @@
+name: MagnetEnchant
+version: '${version}'
+main: de.magnet.MagnetPlugin
+api-version: '1.21'
+author: Antigravity
+description: 'Magnet Verzauberung zum automatischen Einsammeln von Blöcken und Items im Umkreis.'
+
+commands:
+  magnet:
+    description: MagnetEnchant Hauptbefehl
+    aliases: [mag]
+    usage: /magnet <toggle|enchant|give|reload>
+
+permissions:
+  magnet.use:
+    description: Erlaubt das Nutzen der Magnet-Verzauberung
+    default: true
+  magnet.toggle:
+    description: Erlaubt das Ein- und Ausschalten des Magnets
+    default: true
+  magnet.admin:
+    description: Zugriff auf Admin-Befehle wie /magnet give, /magnet enchant und /magnet reload
+    default: op

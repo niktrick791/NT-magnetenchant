@@ -1,0 +1,7 @@
+name: MagnetEnchant
+version: '${version}'
+main: de.magnet.MagnetPlugin
+api-version: '1.21'
+author: Antigravity
+description: 'Magnet Verzauberung für Purpur / Paper 26.2 zum automatischen Einsammeln von Blöcken im Umkreis.'
+prefix: 'Magnet'
