@@ -1,5 +1,7 @@
 package de.magnet;
 
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -14,10 +16,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class MagnetCommand implements CommandExecutor, TabCompleter {
+public class MagnetCommand implements BasicCommand, CommandExecutor, TabCompleter {
 
     private final MagnetPlugin plugin;
 
@@ -25,11 +28,37 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
         this.plugin = plugin;
     }
 
+    // --- Paper Brigadier BasicCommand ---
+
+    @Override
+    public void execute(CommandSourceStack stack, String[] args) {
+        executeCommand(stack.getSender(), args);
+    }
+
+    @Override
+    public Collection<String> suggest(CommandSourceStack stack, String[] args) {
+        return suggestCompletions(stack.getSender(), args);
+    }
+
+    // --- Bukkit Fallback CommandExecutor & TabCompleter ---
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        executeCommand(sender, args);
+        return true;
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
+        return suggestCompletions(sender, args);
+    }
+
+    // --- Core Command Logic ---
+
+    public void executeCommand(CommandSender sender, String[] args) {
         if (args.length == 0) {
             sendHelp(sender);
-            return true;
+            return;
         }
 
         String sub = args[0].toLowerCase();
@@ -37,11 +66,11 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
             case "toggle" -> {
                 if (!(sender instanceof Player player)) {
                     sender.sendMessage(Component.text("Dieser Befehl kann nur von Spielern ausgeführt werden!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 if (!player.hasPermission("magnet.toggle") && !player.hasPermission("magnet.use")) {
                     player.sendMessage(Component.text("Keine Berechtigung!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 boolean newState = plugin.toggleMagnet(player);
                 if (newState) {
@@ -51,23 +80,22 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(Component.text("Magnet-Modus: ").color(NamedTextColor.GRAY)
                             .append(Component.text("DEAKTIVIERT").color(NamedTextColor.RED)));
                 }
-                return true;
             }
 
             case "enchant" -> {
                 if (!(sender instanceof Player player)) {
                     sender.sendMessage(Component.text("Dieser Befehl kann nur von Spielern ausgeführt werden!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 if (!player.hasPermission("magnet.admin")) {
                     player.sendMessage(Component.text("Keine Berechtigung!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
 
                 ItemStack hand = player.getInventory().getItemInMainHand();
                 if (hand.getType().isAir()) {
                     player.sendMessage(Component.text("Du musst ein Item in der Haupthand halten!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
 
                 int level = 1;
@@ -76,7 +104,7 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
                         level = Math.max(0, Integer.parseInt(args[1]));
                     } catch (NumberFormatException e) {
                         player.sendMessage(Component.text("Ungültiges Level: " + args[1]).color(NamedTextColor.RED));
-                        return true;
+                        return;
                     }
                 }
 
@@ -89,24 +117,23 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
                             .append(Component.text("Magnet " + MagnetEnchantment.toRoman(level)).color(NamedTextColor.AQUA))
                             .append(Component.text(" verzaubert!").color(NamedTextColor.GREEN)));
                 }
-                return true;
             }
 
             case "give" -> {
                 if (!sender.hasPermission("magnet.admin")) {
                     sender.sendMessage(Component.text("Keine Berechtigung!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
 
                 if (args.length < 2) {
                     sender.sendMessage(Component.text("Verwendung: /magnet give <Spieler> [Level]").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
 
                 Player target = Bukkit.getPlayer(args[1]);
                 if (target == null) {
                     sender.sendMessage(Component.text("Spieler '" + args[1] + "' nicht gefunden!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
 
                 int level = 1;
@@ -115,7 +142,7 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
                         level = Math.max(1, Integer.parseInt(args[2]));
                     } catch (NumberFormatException e) {
                         sender.sendMessage(Component.text("Ungültiges Level: " + args[2]).color(NamedTextColor.RED));
-                        return true;
+                        return;
                     }
                 }
 
@@ -127,17 +154,16 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
                         .color(NamedTextColor.GREEN)
                         .append(Component.text("Magnet " + MagnetEnchantment.toRoman(level)).color(NamedTextColor.AQUA))
                         .append(Component.text(" erhalten!").color(NamedTextColor.GREEN)));
-                return true;
             }
 
             case "book" -> {
                 if (!(sender instanceof Player player)) {
                     sender.sendMessage(Component.text("Dieser Befehl kann nur von Spielern ausgeführt werden! Verwende /magnet give <Spieler> [Level]").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 if (!player.hasPermission("magnet.admin")) {
                     player.sendMessage(Component.text("Keine Berechtigung!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
 
                 int level = 1;
@@ -146,7 +172,7 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
                         level = Math.max(1, Integer.parseInt(args[1]));
                     } catch (NumberFormatException e) {
                         player.sendMessage(Component.text("Ungültiges Level: " + args[1]).color(NamedTextColor.RED));
-                        return true;
+                        return;
                     }
                 }
 
@@ -156,23 +182,18 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
                         .color(NamedTextColor.GREEN)
                         .append(Component.text("Magnet " + MagnetEnchantment.toRoman(level)).color(NamedTextColor.AQUA))
                         .append(Component.text(" erhalten!").color(NamedTextColor.GREEN)));
-                return true;
             }
 
             case "reload" -> {
                 if (!sender.hasPermission("magnet.admin")) {
                     sender.sendMessage(Component.text("Keine Berechtigung!").color(NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 plugin.reload();
                 sender.sendMessage(Component.text("[MagnetEnchant] Konfiguration erfolgreich neu geladen!").color(NamedTextColor.GREEN));
-                return true;
             }
 
-            default -> {
-                sendHelp(sender);
-                return true;
-            }
+            default -> sendHelp(sender);
         }
     }
 
@@ -192,9 +213,8 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        if (args.length == 1) {
+    public List<String> suggestCompletions(CommandSender sender, String[] args) {
+        if (args.length <= 1) {
             List<String> completions = new ArrayList<>();
             completions.add("toggle");
             if (sender.hasPermission("magnet.admin")) {
@@ -203,7 +223,8 @@ public class MagnetCommand implements CommandExecutor, TabCompleter {
                 completions.add("give");
                 completions.add("reload");
             }
-            return completions.stream().filter(s -> s.startsWith(args[0].toLowerCase())).toList();
+            String current = args.length == 1 ? args[0].toLowerCase() : "";
+            return completions.stream().filter(s -> s.startsWith(current)).toList();
         }
 
         if (args.length == 2) {

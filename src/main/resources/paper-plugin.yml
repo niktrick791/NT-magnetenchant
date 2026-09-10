@@ -5,3 +5,14 @@ api-version: '1.21'
 author: Antigravity
 description: 'Magnet Verzauberung für Purpur / Paper 26.2 zum automatischen Einsammeln von Blöcken im Umkreis.'
 prefix: 'Magnet'
+
+permissions:
+  magnet.use:
+    description: Erlaubt das Nutzen der Magnet-Verzauberung
+    default: true
+  magnet.toggle:
+    description: Erlaubt das Ein- und Ausschalten des Magnets
+    default: true
+  magnet.admin:
+    description: Zugriff auf Admin-Befehle wie /magnet give, /magnet enchant und /magnet reload
+    default: op

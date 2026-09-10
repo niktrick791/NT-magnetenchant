@@ -23,10 +23,10 @@ public class MagnetPlugin extends JavaPlugin {
 
         this.magnetEnchantment = new MagnetEnchantment(this);
 
-        // Register commands
-        MagnetCommand magnetCommand = new MagnetCommand(this);
-        Objects.requireNonNull(getCommand("magnet")).setExecutor(magnetCommand);
-        Objects.requireNonNull(getCommand("magnet")).setTabCompleter(magnetCommand);
+        // Register commands via Paper's modern LifecycleEventManager
+        getLifecycleManager().registerEventHandler(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register("magnet", "MagnetEnchant Hauptbefehl", java.util.List.of("mag", "mgn"), new MagnetCommand(this));
+        });
 
         // Register listeners
         getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
