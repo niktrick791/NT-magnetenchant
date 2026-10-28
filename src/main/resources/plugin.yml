@@ -1,7 +1,8 @@
-name: MagnetEnchant
+name: NT-magnetenchant
 version: '${version}'
 main: de.magnet.MagnetPlugin
 author: Antigravity
+website: https://github.com/niktrick791/NT-magnetenchant
 description: 'Magnet Verzauberung zum automatischen Einsammeln von Blöcken und Items im Umkreis (1.8 - 1.21.4+).'
 
 commands:

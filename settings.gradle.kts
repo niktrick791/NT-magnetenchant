@@ -1,1 +1,1 @@
-rootProject.name = "MagnetEnchant"
+rootProject.name = "NT-magnetenchant"

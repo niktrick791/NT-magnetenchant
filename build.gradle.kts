@@ -38,7 +38,7 @@ tasks.processResources {
 }
 
 tasks.jar {
-    archiveBaseName.set("MagnetEnchant")
+    archiveBaseName.set("NT-magnetenchant")
     archiveClassifier.set("")
     archiveVersion.set("1.0.1")
 }

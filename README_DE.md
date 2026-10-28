@@ -1,4 +1,4 @@
-# 🧲 MagnetEnchant - Minecraft Plugin
+# 🧲 NT-magnetenchant - Minecraft Plugin
 
 [🇬🇧 Switch to English Version](README.md) | [🇩🇪 Deutsche Version](README_DE.md)
 
