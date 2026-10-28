@@ -11,6 +11,7 @@ public class ConfigManager {
 
     private final MagnetPlugin plugin;
 
+    private String language = "en";
     private int tickInterval = 3;
     private boolean disableWhileSneaking = true;
     private boolean onlyPullIfInventorySpace = true;
@@ -63,6 +64,11 @@ public class ConfigManager {
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
         FileConfiguration config = plugin.getConfig();
+
+        language = config.getString("language", "en").toLowerCase();
+        if (!"de".equals(language) && !"en".equals(language)) {
+            language = "en";
+        }
 
         tickInterval = config.getInt("magnet.tick-interval", 3);
         disableWhileSneaking = config.getBoolean("magnet.disable-while-sneaking", true);
@@ -122,6 +128,37 @@ public class ConfigManager {
         fishingChance = config.getDouble("books.fishing.chance", 0.20);
         piglinBarterEnabled = config.getBoolean("books.piglin-barter.enabled", true);
         piglinBarterChance = config.getDouble("books.piglin-barter.chance", 0.15);
+    }
+
+    public String getLanguage() { return language; }
+
+    public void setLanguage(String lang) {
+        String clean = (lang != null && lang.equalsIgnoreCase("de")) ? "de" : "en";
+        this.language = clean;
+        plugin.getConfig().set("language", clean);
+        plugin.saveConfig();
+        load();
+    }
+
+    public String getMessage(String key, String fallback) {
+        boolean isDe = "de".equalsIgnoreCase(language);
+        if ("help-toggle".equals(key)) return isDe ? "§e/magnet toggle [spieler] §7- Magnet für dich oder einen Spieler umschalten" : "§e/magnet toggle [player] §7- Toggle magnet for yourself or a player";
+        if ("help-give".equals(key)) return isDe ? "§e/magnet give <spieler> [level] §7- Gibt ein Magnet-Verzauberungsbuch" : "§e/magnet give <player> [level] §7- Gives an enchanted magnet book";
+        if ("help-enchant".equals(key)) return isDe ? "§e/magnet enchant [level] §7- Verzaubert das Item in deiner Hand" : "§e/magnet enchant [level] §7- Enchants the item in your hand";
+        if ("help-lang".equals(key)) return isDe ? "§e/magnet lang <de|en> §7- Ändert die Sprache (Deutsch/Englisch)" : "§e/magnet lang <de|en> §7- Changes the plugin language (German/English)";
+        if ("help-reload".equals(key)) return isDe ? "§e/magnet reload §7- Lädt die Konfiguration neu" : "§e/magnet reload §7- Reloads configuration";
+        if ("toggle-on".equals(key)) return isDe ? "§aDein Magnet wurde aktiviert!" : "§aYour magnet has been enabled!";
+        if ("toggle-off".equals(key)) return isDe ? "§cDein Magnet wurde deaktiviert." : "§cYour magnet has been disabled.";
+        if ("toggle-other-on".equals(key)) return isDe ? "§aMagnet für §e{target} §aaktiviert." : "§aMagnet for §e{target} §aenabled.";
+        if ("toggle-other-off".equals(key)) return isDe ? "§cMagnet für §e{target} §cdeaktiviert." : "§cMagnet for §e{target} §cdisabled.";
+        if ("give-success".equals(key)) return isDe ? "§aMagnet-Buch Level {level} an §e{target} §agegeben." : "§aGave Magnet Book Level {level} to §e{target}§a.";
+        if ("enchant-success".equals(key)) return isDe ? "§aItem erfolgreich mit §bMagnet {level} §averzaubert!" : "§aSuccessfully enchanted item with §bMagnet {level}§a!";
+        if ("enchant-no-item".equals(key)) return isDe ? "§cDu musst ein Werkzeug oder Rüstungsteil in der Hand halten." : "§cYou must hold a tool or armor piece in your hand.";
+        if ("no-permission".equals(key)) return isDe ? "§cDazu hast du keine Berechtigung." : "§cYou do not have permission for this.";
+        if ("reload-success".equals(key)) return isDe ? "§aKonfiguration erfolgreich neu geladen!" : "§aConfiguration successfully reloaded!";
+        if ("lang-changed".equals(key)) return isDe ? "§aSprache erfolgreich auf §eDeutsch §ageändert!" : "§aLanguage successfully set to §eEnglish§a!";
+        if ("unknown-sub".equals(key)) return isDe ? "§cUnbekannter Unterbefehl. Nutze §e/magnet help§c." : "§cUnknown subcommand. Use §e/magnet help§c.";
+        return fallback;
     }
 
     public LevelSettings getLevelSettings(int level) {

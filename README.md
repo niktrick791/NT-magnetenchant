@@ -1,109 +1,95 @@
-# 🧲 MagnetEnchant (Purpur / Paper 26.2)
+# 🧲 MagnetEnchant - Minecraft Plugin
 
-Ein modernes, performantes Purpur/Paper Plugin, das eine neue benutzerdefinierte Verzauberung namens **Magnet** hinzufügt.  
-Mit dieser Verzauberung werden gedroppte Items und abgebaute Blöcke in einem konfigurierbaren Radius automatisch zum Spieler herangezogen!
+[🇩🇪 Zur deutschen Version wechseln](README_DE.md) | [🇬🇧 English Version](README.md)
+
+A modern, high-performance Spigot / Paper / Purpur plugin (Minecraft 1.8.8 – 1.21.4+) that adds a custom enchantment called **Magnet**.  
+With this enchantment, dropped items and mined blocks are smoothly drawn toward the player within a configurable radius!
 
 ---
 
 ## ✨ Features
 
-- **Neues Custom Enchantment: Magnet**
-  - Stufen: **Magnet I**, **Magnet II**, **Magnet III** (beliebig erweiterbar in der `config.yml`).
-  - Funktioniert auf **Werkzeugen** (Spitzhacken, Äxte, Schaufeln, Hacken, Schwerter) und/oder **Rüstungen** (Stiefel, Brustpanzer, Helm, Hose).
-- **📚 Alle Survival-Fundmöglichkeiten & Verzauberungsmethoden**:
-  - **Am Verzauberungstisch:**
-    - Wenn du Werkzeuge, Rüstungen oder Bücher am Verzauberungstisch verzauberst, kann die Verzauberung **Magnet I** (bei Level 30 sogar **Magnet II**) zusätzlich ganz natürlich entstehen!
-  - **Dorfbewohner (Bibliothekare):**
-    - Bibliothekare können verzauberte Bücher mit **Magnet** in ihren Tauschangeboten für Smaragde anbieten.
-  - **Loot-Kisten & Dungeons:**
-    - In Kisten von Minenschächten, Dungeons, Festungen, Antiken Städten, Wüstentempeln, Bastionen etc.
-  - **Angeln:**
-    - Schätze, die aus dem Wasser geangelt werden, können Magnet-Bücher sein.
-  - **Piglin-Tausch:**
-    - Beim Tauschen von Goldbarren mit Piglins im Nether.
-  - **Survival-Crafting (Werkbank):**
-    - 1 Buch in der Mitte + 4 Eisenbarren + 4 Redstone = **Verzaubertes Buch (Magnet I)**.
-  - **Amboss & Schleifstein:**
-    - Bücher auf Werkzeuge/Rüstung schmieden und gleiche Stufen verschmelzen (Magnet I + I = II, II + II = III).
-    - Am Schleifstein entfernbar.
-  - **Befehle (Admin):**
-    - `/magnet book [Level]` – Sofortiges Buch ins Inventar.
-    - `/magnet give <Spieler> [Level]` – Buch an Spieler vergeben.
-- **Flüssiges Einsaugen & Animationen**
-  - Zieht Items mit sanfter physikalischer Flugkurve zum Spieler.
-  - Setzt die Pickup-Verzögerung sofort auf 0, damit abgebaute Items ohne Wartezeit aufgenommen werden.
-  - Optionale Partikeleffekte (`PORTAL`, `ENCHANT`, etc.) und Pickup-Sounds.
-- **Intelligente Schutzmechanismen**
-  - **Inventar-Prüfung**: Zieht nur Items an, wenn der Spieler auch tatsächlich Platz dafür im Inventar hat.
-  - **Sneak-Bypass**: Schleicht der Spieler (Shift), wird das Anziehen pausiert (ideal, um Items an Freunde weiterzugeben).
-  - **Toggle-Modus**: Spieler können den Magneten mit `/magnet toggle` jederzeit selbst an- und ausschalten.
-  - **Blockabbau-Unterstützung**: Gedroppte Blöcke werden beim Abbauen sofort in Richtung des Spielers gezogen oder optional direkt ins Inventar transferiert (`instant-block-break-pickup`).
+- **Custom Enchantment: Magnet**
+  - Levels: **Magnet I**, **Magnet II**, **Magnet III** (infinitely extensible in `config.yml`).
+  - Works on **tools** (pickaxes, axes, shovels, hoes, swords) and/or **armor** (boots, leggings, chestplates, helmets, elytra).
+- **📚 Complete Survival Ways to Obtain**:
+  - **Enchanting Table:**
+    - When enchanting tools, armor, or books at an enchanting table, **Magnet I** (at level 30 even **Magnet II**) can naturally appear as an extra enchantment!
+  - **Villagers (Librarians):**
+    - Librarians can offer enchanted books with **Magnet** in their trades for emeralds.
+  - **Loot Chests & Dungeons:**
+    - Found in mineshafts, dungeons, strongholds, ancient cities, desert temples, bastions, and end cities.
+  - **Fishing:**
+    - Can be reeled in as enchanted book treasure.
+  - **Piglin Bartering:**
+    - Can be obtained by bartering gold ingots with Piglins in the Nether.
+  - **Survival Crafting (Workbench):**
+    - 1 Book in the center + 4 Iron Ingots + 4 Redstone Dust = **Enchanted Book (Magnet I)**.
+  - **Anvil & Grindstone:**
+    - Apply books to tools/armor on an anvil, merge equal levels (I + I = II, II + II = III), or remove via grindstone.
+- **Smooth Attraction & Physics**
+  - Pulls items with smooth acceleration curves directly to the player.
+  - Instantly resets item pickup delay to 0 so mined blocks are picked up immediately.
+  - Optional particle trails and pickup chime sounds.
+- **Smart Protection Features**
+  - **Inventory Check**: Only pulls items if the player has available inventory space.
+  - **Sneak Bypass**: Sneaking (Shift) temporarily pauses attraction (ideal for dropping items to friends).
+  - **Toggle Command**: `/magnet toggle` lets players enable or disable the magnet effect at any time.
+  - **Instant Block Pickup**: Optional `instant-block-break-pickup` directly places mined blocks into the inventory.
+- **Bilingual & Multi-Language Support**:
+  - Configurable language in `config.yml`: `language: en` or `language: de`.
+  - In-game language switching: `/magnet lang <de|en>`.
+- **Universal Cross-Version Support**:
+  - Compiled targeting Java 8 bytecode (`major version: 52`). Compatible with Minecraft 1.8.8 through 1.21.4+.
 
 ---
 
-## 🚀 Befehle & Permissions
+## 🚀 Commands & Permissions
 
-| Befehl | Beschreibung | Permission | Standard |
+| Command | Permission | Default | Description |
 |---|---|---|---|
-| `/magnet toggle` | Schaltet das automatische Einsammeln für sich an/aus | `magnet.toggle` / `magnet.use` | Jeder Spieler (`true`) |
-| `/magnet book [Level]` | Gibt dir direkt ein Verzaubertes Buch mit Magnet | `magnet.admin` | OP (`op`) |
-| `/magnet give <Spieler> [Level]` | Gibt ein Verzaubertes Buch an einen Spieler | `magnet.admin` | OP (`op`) |
-| `/magnet enchant [Level]` | Verzaubert das Item in der Hand mit Magnet | `magnet.admin` | OP (`op`) |
-| `/magnet reload` | Lädt die `config.yml` im laufenden Betrieb neu | `magnet.admin` | OP (`op`) |
+| `/magnet toggle [player]` | `magnet.toggle` | Everyone (`true`) | Toggles the magnet effect on or off. |
+| `/magnet give <player> [level]` | `magnet.admin` | OP (`op`) | Gives an enchanted Magnet book to a player. |
+| `/magnet enchant [level]` | `magnet.admin` | OP (`op`) | Enchants the held item with Magnet. |
+| `/magnet lang <de\|en>` | `magnet.admin` | OP (`op`) | Changes plugin language live. |
+| `/magnet reload` | `magnet.admin` | OP (`op`) | Reloads `config.yml`. |
 
 ---
 
-## ⚙️ Konfiguration (`config.yml`)
+## ⚙️ Configuration (`config.yml`)
 
 ```yaml
+# Language: "en" (English) or "de" (German)
+language: en
+
 magnet:
-  # Wie oft der Magnet-Scan ausgeführt wird (in Server-Ticks, 20 Ticks = 1 Sekunde)
   tick-interval: 3
-
-  # Deaktiviert das Anziehen, wenn der Spieler schleicht (Shift)
   disable-while-sneaking: true
-
-  # Items nur anziehen, wenn Platz im Inventar vorhanden ist
   only-pull-if-inventory-space: true
-
-  # Wo nach der Verzauberung gesucht wird
   check-main-hand: true
   check-off-hand: true
   check-armor: true
-
-  # Beim Abbauen von Blöcken:
   pull-drops-on-block-break: true
   instant-block-break-pickup: false
 
-# Stufen, Radien und Geschwindigkeiten
 levels:
   1:
-    radius: 5.0
-    speed: 0.45
+    radius: 7.0
+    speed: 0.50
   2:
-    radius: 8.0
-    speed: 0.65
+    radius: 11.0
+    speed: 0.70
   3:
-    radius: 12.0
-    speed: 0.85
-
-# Optik und Sounds
-effects:
-  sound:
-    enabled: true
-    type: "ENTITY_ITEM_PICKUP"
-    volume: 0.4
-    pitch: 1.3
-  particles:
-    enabled: true
-    type: "PORTAL"
+    radius: 16.0
+    speed: 0.95
 ```
 
 ---
 
-## 📦 Kompilierte JAR-Datei
+## 📦 Building
 
-Die fertige Datei befindet sich in:
-`build/libs/MagnetEnchant-1.0.0.jar`
-
-Einfach in den `plugins/`-Ordner deines Purpur-Servers kopieren und den Server starten bzw. `/reload confirm` ausführen!
+```bash
+.\gradlew.bat jar
+```
+The compiled JAR is generated at:
+- `build/libs/MagnetEnchant-1.0.1.jar`

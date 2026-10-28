@@ -1,7 +1,11 @@
 # ========================================== #
-#      MagnetEnchant - Konfiguration         #
-#          Purpur / Paper 26.2               #
+#      MagnetEnchant - Configuration         #
+#          1.8.8 - 1.21.4+ Universal         #
 # ========================================== #
+
+# Language: "en" (English) or "de" (German)
+# Can also be changed in-game via /magnet lang <en|de>
+language: en
 
 magnet:
   # Wie oft der Magnet-Scan ausgeführt wird (in Server-Ticks, 20 Ticks = 1 Sekunde)
