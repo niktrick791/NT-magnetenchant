@@ -8,16 +8,15 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.Vector;
 
 import java.util.Iterator;
 import java.util.Map;
 
-public class BlockBreakListener implements Listener {
+public class BlockDropItemListener implements Listener {
 
     private final MagnetPlugin plugin;
 
-    public BlockBreakListener(MagnetPlugin plugin) {
+    public BlockDropItemListener(MagnetPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -56,15 +55,7 @@ public class BlockBreakListener implements Listener {
                 }
             }
             if (config.isPlaySound() && event.getItems().isEmpty()) {
-                player.playSound(player.getLocation(), config.getSound(), config.getSoundVolume(), config.getSoundPitch());
-            }
-        } else if (config.isPullDropsOnBlockBreak()) {
-            for (Item item : event.getItems()) {
-                item.setPickupDelay(0);
-                Vector dir = player.getLocation().add(0, 0.75, 0).toVector().subtract(item.getLocation().toVector());
-                if (dir.lengthSquared() > 0.01) {
-                    item.setVelocity(dir.normalize().multiply(0.65));
-                }
+                XMagnetVersion.playSound(player, "ENTITY_ITEM_PICKUP", "ITEM_PICKUP", config.getSoundVolume(), config.getSoundPitch());
             }
         }
     }

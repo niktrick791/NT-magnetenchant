@@ -50,18 +50,13 @@ public class MagnetTask extends BukkitRunnable {
             Location playerLoc = player.getLocation();
             Location targetLoc = playerLoc.clone().add(0, 0.75, 0);
 
-            Collection<Entity> nearby = player.getWorld().getNearbyEntities(
-                    playerLoc,
-                    radius,
-                    radius,
-                    radius,
-                    e -> e instanceof Item
-            );
-
+            // Universal getNearbyEntities without Java 8 predicate overload failure
+            Collection<Entity> nearby = player.getWorld().getNearbyEntities(playerLoc, radius, radius, radius);
             boolean pulledAny = false;
 
             for (Entity entity : nearby) {
-                if (!(entity instanceof Item item)) continue;
+                if (!(entity instanceof Item)) continue;
+                Item item = (Item) entity;
                 if (!item.isValid() || item.isDead()) continue;
 
                 // Ignore items with infinite/huge pickup delay (e.g. decorative items)
@@ -94,20 +89,15 @@ public class MagnetTask extends BukkitRunnable {
                 }
 
                 if (config.isSpawnParticles()) {
-                    item.getWorld().spawnParticle(
-                            config.getParticle(),
-                            item.getLocation().add(0, 0.2, 0),
-                            1,
-                            0.02,
-                            0.02,
-                            0.02,
-                            0.01
-                    );
+                    try {
+                        item.getWorld().getClass().getMethod("spawnParticle", Class.forName("org.bukkit.Particle"), Location.class, int.class, double.class, double.class, double.class, double.class)
+                                .invoke(item.getWorld(), config.getParticle(), item.getLocation().add(0, 0.2, 0), 1, 0.02, 0.02, 0.02, 0.01);
+                    } catch (Throwable ignored) {}
                 }
             }
 
             if (pulledAny && config.isPlaySound() && Math.random() < 0.25) {
-                player.playSound(playerLoc, config.getSound(), config.getSoundVolume(), config.getSoundPitch());
+                XMagnetVersion.playSound(player, "ENTITY_ITEM_PICKUP", "ITEM_PICKUP", config.getSoundVolume(), config.getSoundPitch());
             }
         }
     }
@@ -117,7 +107,7 @@ public class MagnetTask extends BukkitRunnable {
         PlayerInventory inv = player.getInventory();
         if (inv.firstEmpty() != -1) return true;
 
-        for (ItemStack slot : inv.getStorageContents()) {
+        for (ItemStack slot : inv.getContents()) {
             if (slot != null && slot.isSimilar(itemStack)) {
                 if (slot.getAmount() < slot.getMaxStackSize()) {
                     return true;

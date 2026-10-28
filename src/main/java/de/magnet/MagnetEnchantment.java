@@ -1,29 +1,29 @@
 package de.magnet;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class MagnetEnchantment {
 
     public static final String KEY_NAME = "magnet";
-    private final NamespacedKey key;
+    private NamespacedKey key;
     private final MagnetPlugin plugin;
 
     public MagnetEnchantment(MagnetPlugin plugin) {
         this.plugin = plugin;
-        this.key = new NamespacedKey(plugin, KEY_NAME);
+        try {
+            this.key = new NamespacedKey(plugin, KEY_NAME);
+        } catch (Throwable ignored) {
+            this.key = null;
+        }
     }
 
     public NamespacedKey getKey() {
@@ -35,17 +35,38 @@ public class MagnetEnchantment {
     }
 
     public int getLevel(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+        if (item == null || item.getType().name().endsWith("AIR") || !item.hasItemMeta()) {
             return 0;
         }
         ItemMeta meta = item.getItemMeta();
-        PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        Integer level = pdc.get(key, PersistentDataType.INTEGER);
-        return level != null ? level : 0;
+        if (meta == null) return 0;
+
+        // Try PDC first
+        int pdcLvl = XMagnetVersion.getPdcLevel(meta, key);
+        if (pdcLvl > 0) return pdcLvl;
+
+        // Fallback: Check Lore
+        if (meta.hasLore()) {
+            List<String> lore = meta.getLore();
+            if (lore != null) {
+                for (String line : lore) {
+                    String clean = ChatColor.stripColor(line).trim();
+                    if (clean.equalsIgnoreCase("Magnet I")) return 1;
+                    if (clean.equalsIgnoreCase("Magnet II")) return 2;
+                    if (clean.equalsIgnoreCase("Magnet III")) return 3;
+                    if (clean.toLowerCase().startsWith("magnet ")) {
+                        String roman = clean.substring(7).trim();
+                        int parsed = fromRoman(roman);
+                        if (parsed > 0) return parsed;
+                    }
+                }
+            }
+        }
+        return 0;
     }
 
     public ItemStack applyMagnet(ItemStack item, int level) {
-        if (item == null || item.getType().isAir()) {
+        if (item == null || item.getType().name().endsWith("AIR")) {
             return item;
         }
         if (level <= 0) {
@@ -57,30 +78,22 @@ public class MagnetEnchantment {
             return item;
         }
 
-        PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        pdc.set(key, PersistentDataType.INTEGER, level);
-
-        // Visual enchantment glint
-        meta.setEnchantmentGlintOverride(true);
+        XMagnetVersion.setPdcLevel(meta, key, level);
+        XMagnetVersion.setGlint(meta);
 
         // Update Lore
-        Component magnetLine = Component.text("Magnet " + toRoman(level))
-                .color(NamedTextColor.GRAY)
-                .decoration(TextDecoration.ITALIC, false);
+        String magnetLine = "§7Magnet " + toRoman(level);
 
-        List<Component> lore = meta.lore();
-        if (lore == null) {
-            lore = new ArrayList<>();
-        } else {
-            lore = new ArrayList<>(lore);
-            lore.removeIf(line -> {
-                String plain = PlainTextComponentSerializer.plainText().serialize(line);
-                return plain.toLowerCase().startsWith("magnet ");
-            });
+        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+        Iterator<String> it = lore.iterator();
+        while (it.hasNext()) {
+            String clean = ChatColor.stripColor(it.next()).trim();
+            if (clean.toLowerCase().startsWith("magnet ")) {
+                it.remove();
+            }
         }
-
         lore.add(0, magnetLine);
-        meta.lore(lore);
+        meta.setLore(lore);
 
         item.setItemMeta(meta);
         return item;
@@ -92,80 +105,41 @@ public class MagnetEnchantment {
         }
 
         ItemMeta meta = item.getItemMeta();
-        PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        if (pdc.has(key, PersistentDataType.INTEGER)) {
-            pdc.remove(key);
+        if (meta == null) return item;
 
-            List<Component> lore = meta.lore();
-            if (lore != null) {
-                lore = new ArrayList<>(lore);
-                lore.removeIf(line -> {
-                    String plain = PlainTextComponentSerializer.plainText().serialize(line);
-                    return plain.toLowerCase().startsWith("magnet ");
-                });
-                meta.lore(lore.isEmpty() ? null : lore);
+        XMagnetVersion.removePdcLevel(meta, key);
+
+        if (meta.hasLore()) {
+            List<String> lore = new ArrayList<>(meta.getLore());
+            Iterator<String> it = lore.iterator();
+            while (it.hasNext()) {
+                String clean = ChatColor.stripColor(it.next()).trim();
+                if (clean.toLowerCase().startsWith("magnet ")) {
+                    it.remove();
+                }
             }
-
-            // Remove glint override if no other enchants exist
-            if (meta.getEnchants().isEmpty()) {
-                meta.setEnchantmentGlintOverride(null);
-            }
-
-            item.setItemMeta(meta);
+            meta.setLore(lore);
         }
+
+        item.setItemMeta(meta);
         return item;
     }
 
     public ItemStack createBook(int level) {
-        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        ItemStack book = new ItemStack(XMagnetVersion.getEnchantedBookMaterial(), 1);
         ItemMeta meta = book.getItemMeta();
         if (meta != null) {
-            meta.displayName(Component.text("Verzaubertes Buch")
-                    .color(NamedTextColor.YELLOW)
-                    .decoration(TextDecoration.ITALIC, false));
+            meta.setDisplayName(XMagnetVersion.colorize("&bVerzaubertes Buch"));
             book.setItemMeta(meta);
         }
         return applyMagnet(book, level);
     }
 
-    public boolean isApplicable(ItemStack item) {
-        if (item == null || item.getType().isAir()) return false;
-        Material mat = item.getType();
-        String name = mat.name();
-
-        if (mat == Material.BOOK || mat == Material.ENCHANTED_BOOK) return true;
-
-        // Tools
-        if (name.endsWith("_PICKAXE") || name.endsWith("_AXE") || name.endsWith("_SHOVEL") ||
-            name.endsWith("_HOE") || name.endsWith("_SWORD") || mat == Material.FISHING_ROD ||
-            mat == Material.BOW || mat == Material.CROSSBOW || mat == Material.TRIDENT ||
-            mat == Material.MACE || mat == Material.SHEARS) {
-            return true;
-        }
-
-        // Armor
-        if (name.endsWith("_HELMET") || name.endsWith("_CHESTPLATE") ||
-            name.endsWith("_LEGGINGS") || name.endsWith("_BOOTS") || mat == Material.ELYTRA) {
-            return true;
-        }
-
-        return false;
-    }
-
     public int getMaxMagnetLevel(Player player, ConfigManager config) {
         int max = 0;
 
-        if (config.isCheckMainHand()) {
-            ItemStack main = player.getInventory().getItemInMainHand();
-            max = Math.max(max, getLevel(main));
-        }
-
-        if (config.isCheckOffHand()) {
-            ItemStack off = player.getInventory().getItemInOffHand();
-            max = Math.max(max, getLevel(off));
-        }
-
-        if (config.isCheckArmor()) {
+        // Check Armor
+        if (config.isArmorAllowed() && player.getInventory().getArmorContents() != null) {
             for (ItemStack armor : player.getInventory().getArmorContents()) {
                 if (armor != null) {
                     max = Math.max(max, getLevel(armor));
@@ -173,23 +147,90 @@ public class MagnetEnchantment {
             }
         }
 
+        // Check Main Hand
+        if (config.isHeldItemAllowed()) {
+            ItemStack main = XMagnetVersion.getItemInHand(player);
+            if (main != null) {
+                max = Math.max(max, getLevel(main));
+            }
+        }
+
+        // Check Off Hand
+        if (config.isOffHandAllowed()) {
+            try {
+                ItemStack off = player.getInventory().getItemInOffHand();
+                if (off != null) {
+                    max = Math.max(max, getLevel(off));
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // Check entire inventory if inventory charm is enabled
+        if (config.isInventoryCharmAllowed()) {
+            for (ItemStack item : player.getInventory().getContents()) {
+                if (item != null) {
+                    max = Math.max(max, getLevel(item));
+                }
+            }
+        }
+
         return max;
     }
 
-    public static String toRoman(int number) {
-        if (number <= 0) return String.valueOf(number);
-        return switch (number) {
-            case 1 -> "I";
-            case 2 -> "II";
-            case 3 -> "III";
-            case 4 -> "IV";
-            case 5 -> "V";
-            case 6 -> "VI";
-            case 7 -> "VII";
-            case 8 -> "VIII";
-            case 9 -> "IX";
-            case 10 -> "X";
-            default -> String.valueOf(number);
-        };
+    public boolean isApplicable(ItemStack item) {
+        if (item == null || item.getType().name().endsWith("AIR")) {
+            return false;
+        }
+        String name = item.getType().name();
+        ConfigManager config = plugin.getConfigManager();
+
+        if (config.isToolsAllowed() && (name.endsWith("_PICKAXE") || name.endsWith("_AXE") ||
+                name.endsWith("_SHOVEL") || name.endsWith("_HOE") || name.endsWith("_SWORD") ||
+                name.equals("BOW") || name.equals("CROSSBOW") || name.equals("TRIDENT") || name.equals("FISHING_ROD") || name.equals("MACE"))) {
+            return true;
+        }
+
+        if (config.isArmorAllowed() && (name.endsWith("_HELMET") || name.endsWith("_CHESTPLATE") ||
+                name.endsWith("_LEGGINGS") || name.endsWith("_BOOTS") || name.equals("ELYTRA"))) {
+            return true;
+        }
+
+        if (name.equals("BOOK") || name.equals("ENCHANTED_BOOK")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static String toRoman(int n) {
+        return switchRoman(n);
+    }
+
+    private static String switchRoman(int n) {
+        switch (n) {
+            case 1: return "I";
+            case 2: return "II";
+            case 3: return "III";
+            case 4: return "IV";
+            case 5: return "V";
+            default: return String.valueOf(n);
+        }
+    }
+
+    public static int fromRoman(String roman) {
+        if (roman == null) return 0;
+        switch (roman.toUpperCase().trim()) {
+            case "I": return 1;
+            case "II": return 2;
+            case "III": return 3;
+            case "IV": return 4;
+            case "V": return 5;
+            default:
+                try {
+                    return Integer.parseInt(roman);
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
+        }
     }
 }

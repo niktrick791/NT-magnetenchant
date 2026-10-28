@@ -1,11 +1,15 @@
 package de.magnet;
 
+import org.bukkit.Material;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.lang.reflect.Constructor;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -23,15 +27,31 @@ public class MagnetPlugin extends JavaPlugin {
 
         this.magnetEnchantment = new MagnetEnchantment(this);
 
-        // Register commands via Paper's modern LifecycleEventManager
-        getLifecycleManager().registerEventHandler(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, event -> {
-            event.registrar().register("magnet", "MagnetEnchant Hauptbefehl", java.util.List.of("mag", "mgn"), new MagnetCommand(this));
-        });
+        // Register commands via Bukkit Standard API
+        PluginCommand cmd = getCommand("magnet");
+        if (cmd != null) {
+            MagnetCommand executor = new MagnetCommand(this);
+            cmd.setExecutor(executor);
+            cmd.setTabCompleter(executor);
+        } else {
+            getLogger().warning("Befehl 'magnet' nicht in plugin.yml gefunden!");
+        }
 
-        // Register listeners
-        getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
+        // Register core listeners (1.8 bis 1.21.4+)
         getServer().getPluginManager().registerEvents(new AnvilGrindstoneListener(this), this);
         getServer().getPluginManager().registerEvents(new BookDiscoveryListener(this), this);
+
+        // Register modern block drop listener (1.13+)
+        try {
+            Class.forName("org.bukkit.event.block.BlockDropItemEvent");
+            getServer().getPluginManager().registerEvents(new BlockDropItemListener(this), this);
+        } catch (Throwable ignored) {}
+
+        // Register modern loot/trade/barter listeners (1.14+)
+        try {
+            Class.forName("org.bukkit.event.world.LootGenerateEvent");
+            getServer().getPluginManager().registerEvents(new ModernDiscoveryListener(this), this);
+        } catch (Throwable ignored) {}
 
         // Register crafting recipe
         registerRecipe();
@@ -39,7 +59,10 @@ public class MagnetPlugin extends JavaPlugin {
         // Start scheduler task
         startTask();
 
-        getLogger().info("MagnetEnchant erfolgreich aktiviert für Purpur 26.2!");
+        getLogger().info("=========================================");
+        getLogger().info(" MagnetEnchant v" + getDescription().getVersion() + " wurde erfolgreich aktiviert!");
+        getLogger().info(" Multi-Version Support: Minecraft 1.8 - 1.21.4+");
+        getLogger().info("=========================================");
     }
 
     @Override
@@ -64,33 +87,48 @@ public class MagnetPlugin extends JavaPlugin {
             return;
         }
         try {
-            org.bukkit.NamespacedKey recipeKey = new org.bukkit.NamespacedKey(this, "magnet_book_recipe");
-            org.bukkit.inventory.ShapedRecipe recipe = new org.bukkit.inventory.ShapedRecipe(recipeKey, magnetEnchantment.createBook(1));
+            ItemStack result = magnetEnchantment.createBook(1);
+            ShapedRecipe recipe;
+
+            // Try 1.12+ constructor with NamespacedKey
+            try {
+                Class<?> keyClass = Class.forName("org.bukkit.NamespacedKey");
+                Constructor<?> keyCtor = keyClass.getConstructor(org.bukkit.plugin.Plugin.class, String.class);
+                Object key = keyCtor.newInstance(this, "magnet_book_recipe");
+                Constructor<ShapedRecipe> recipeCtor = ShapedRecipe.class.getConstructor(keyClass, ItemStack.class);
+                recipe = recipeCtor.newInstance(key, result);
+            } catch (Throwable t) {
+                // Pre-1.12 Bukkit constructor
+                recipe = new ShapedRecipe(result);
+            }
+
             recipe.shape("RIR", "IBI", "RIR");
-            recipe.setIngredient('R', org.bukkit.Material.REDSTONE);
-            recipe.setIngredient('I', org.bukkit.Material.IRON_INGOT);
-            recipe.setIngredient('B', org.bukkit.Material.BOOK);
+            recipe.setIngredient('R', Material.REDSTONE);
+            recipe.setIngredient('I', Material.IRON_INGOT);
+            recipe.setIngredient('B', Material.BOOK);
+
             getServer().addRecipe(recipe);
-        } catch (Exception ignored) {}
+        } catch (Throwable ex) {
+            getLogger().warning("Konnte Magnet-Rezept nicht registrieren: " + ex.getMessage());
+        }
     }
 
     private void unregisterRecipe() {
         try {
-            org.bukkit.NamespacedKey recipeKey = new org.bukkit.NamespacedKey(this, "magnet_book_recipe");
-            getServer().removeRecipe(recipeKey);
-        } catch (Exception ignored) {}
+            // Safe removal if NamespacedKey exists (1.12+)
+            Class<?> keyClass = Class.forName("org.bukkit.NamespacedKey");
+            Constructor<?> keyCtor = keyClass.getConstructor(org.bukkit.plugin.Plugin.class, String.class);
+            Object key = keyCtor.newInstance(this, "magnet_book_recipe");
+            getServer().getClass().getMethod("removeRecipe", keyClass).invoke(getServer(), key);
+        } catch (Throwable ignored) {}
     }
 
     private void startTask() {
-        if (magnetTask != null && !magnetTask.isCancelled()) {
+        if (magnetTask != null) {
             magnetTask.cancel();
         }
         int interval = Math.max(1, configManager.getTickInterval());
-        magnetTask = new MagnetTask(this).runTaskTimer(this, 10L, interval);
-    }
-
-    public boolean isMagnetEnabled(Player player) {
-        return !disabledPlayers.contains(player.getUniqueId());
+        magnetTask = new MagnetTask(this).runTaskTimer(this, interval, interval);
     }
 
     public boolean toggleMagnet(Player player) {
@@ -102,6 +140,10 @@ public class MagnetPlugin extends JavaPlugin {
             disabledPlayers.add(uuid);
             return false;
         }
+    }
+
+    public boolean isMagnetEnabled(Player player) {
+        return !disabledPlayers.contains(player.getUniqueId()) && player.hasPermission("magnet.use");
     }
 
     public ConfigManager getConfigManager() {

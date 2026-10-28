@@ -1,9 +1,8 @@
 name: MagnetEnchant
 version: '${version}'
 main: de.magnet.MagnetPlugin
-api-version: '1.21'
 author: Antigravity
-description: 'Magnet Verzauberung zum automatischen Einsammeln von Blöcken und Items im Umkreis.'
+description: 'Magnet Verzauberung zum automatischen Einsammeln von Blöcken und Items im Umkreis (1.8 - 1.21.4+).'
 
 commands:
   magnet:

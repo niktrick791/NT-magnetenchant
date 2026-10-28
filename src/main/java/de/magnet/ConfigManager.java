@@ -1,6 +1,5 @@
 package de.magnet;
 
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -22,12 +21,11 @@ public class ConfigManager {
     private boolean pullDropsOnBlockBreak = true;
 
     private boolean playSound = true;
-    private Sound sound = Sound.ENTITY_ITEM_PICKUP;
     private float soundVolume = 0.5f;
     private float soundPitch = 1.2f;
 
     private boolean spawnParticles = true;
-    private Particle particle = Particle.PORTAL;
+    private Object particle = null;
 
     private final Map<Integer, LevelSettings> levels = new HashMap<>();
     private int maxLevel = 3;
@@ -44,7 +42,18 @@ public class ConfigManager {
     private boolean piglinBarterEnabled = true;
     private double piglinBarterChance = 0.15;
 
-    public record LevelSettings(double radius, double speed) {}
+    public static class LevelSettings {
+        private final double radius;
+        private final double speed;
+
+        public LevelSettings(double radius, double speed) {
+            this.radius = radius;
+            this.speed = speed;
+        }
+
+        public double radius() { return radius; }
+        public double speed() { return speed; }
+    }
 
     public ConfigManager(MagnetPlugin plugin) {
         this.plugin = plugin;
@@ -65,25 +74,16 @@ public class ConfigManager {
         pullDropsOnBlockBreak = config.getBoolean("magnet.pull-drops-on-block-break", true);
 
         playSound = config.getBoolean("effects.sound.enabled", true);
-        String soundStr = config.getString("effects.sound.type", "entity.item.pickup").toLowerCase().replace('_', '.');
-        try {
-            org.bukkit.NamespacedKey soundKey = org.bukkit.NamespacedKey.minecraft(soundStr.replace("minecraft:", ""));
-            Sound found = org.bukkit.Registry.SOUNDS.get(soundKey);
-            sound = found != null ? found : Sound.ENTITY_ITEM_PICKUP;
-        } catch (Exception e) {
-            plugin.getLogger().warning("Unbekannter Sound in config: " + soundStr + ", nutze Fallback ENTITY_ITEM_PICKUP");
-            sound = Sound.ENTITY_ITEM_PICKUP;
-        }
         soundVolume = (float) config.getDouble("effects.sound.volume", 0.5);
         soundPitch = (float) config.getDouble("effects.sound.pitch", 1.2);
 
         spawnParticles = config.getBoolean("effects.particles.enabled", true);
         String particleStr = config.getString("effects.particles.type", "PORTAL");
         try {
-            particle = Particle.valueOf(particleStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            plugin.getLogger().warning("Unbekanntes Partikel in config: " + particleStr + ", nutze Fallback PORTAL");
-            particle = Particle.PORTAL;
+            Class<?> pClass = Class.forName("org.bukkit.Particle");
+            particle = Enum.valueOf((Class<Enum>) pClass, particleStr.toUpperCase());
+        } catch (Throwable ignored) {
+            particle = null;
         }
 
         levels.clear();
@@ -105,7 +105,11 @@ public class ConfigManager {
             levels.put(3, new LevelSettings(12.0, 0.85));
         }
 
-        maxLevel = levels.keySet().stream().max(Integer::compareTo).orElse(3);
+        int max = 3;
+        for (int k : levels.keySet()) {
+            if (k > max) max = k;
+        }
+        maxLevel = max;
 
         craftingRecipeEnabled = config.getBoolean("books.crafting-recipe.enabled", true);
         lootChestsEnabled = config.getBoolean("books.loot-chests.enabled", true);
@@ -135,19 +139,20 @@ public class ConfigManager {
     public int getTickInterval() { return tickInterval; }
     public boolean isDisableWhileSneaking() { return disableWhileSneaking; }
     public boolean isOnlyPullIfInventorySpace() { return onlyPullIfInventorySpace; }
-    public boolean isCheckMainHand() { return checkMainHand; }
-    public boolean isCheckOffHand() { return checkOffHand; }
-    public boolean isCheckArmor() { return checkArmor; }
+    public boolean isToolsAllowed() { return checkMainHand; }
+    public boolean isHeldItemAllowed() { return checkMainHand; }
+    public boolean isOffHandAllowed() { return checkOffHand; }
+    public boolean isArmorAllowed() { return checkArmor; }
+    public boolean isInventoryCharmAllowed() { return false; }
     public boolean isInstantBlockBreakPickup() { return instantBlockBreakPickup; }
     public boolean isPullDropsOnBlockBreak() { return pullDropsOnBlockBreak; }
 
     public boolean isPlaySound() { return playSound; }
-    public Sound getSound() { return sound; }
     public float getSoundVolume() { return soundVolume; }
     public float getSoundPitch() { return soundPitch; }
 
     public boolean isSpawnParticles() { return spawnParticles; }
-    public Particle getParticle() { return particle; }
+    public Object getParticle() { return particle; }
 
     public int getMaxLevel() { return maxLevel; }
 
